@@ -6,14 +6,14 @@
 
 ## 安装
 
-尚未发布稳定 tag，可通过 VCS 引用 main 分支：
+v1.0.0 可通过 VCS 仓库安装，无需先注册 Packagist：
 
 ```json
 {
   "repositories": [
     {"type": "vcs", "url": "https://github.com/hao-php/swoole-http-client.git"}
   ],
-  "require": {"haoa/swoole-http-client": "dev-main"}
+  "require": {"haoa/swoole-http-client": "^1.0"}
 }
 ```
 
@@ -157,7 +157,7 @@ Client 和内置中间件不保存请求过程状态，可跨协程复用。read
 
 ## 数组选项迁移
 
-当前尚未发布稳定 tag，本次统一改用配置对象，不保留数组接口：
+v1.0.0 统一使用配置对象，不保留早期开发版本的数组接口：
 
 - `new Client(['timeout' => 5])` → `new Client(new RequestOptions(timeout: 5.0))`。
 - `get($url, ['query' => $query])` → `get($url, new RequestOptions(query: $query))`。
