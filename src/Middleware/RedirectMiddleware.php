@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Haoa\SwooleHttpClient\Middleware;
 
+use Haoa\SwooleHttpClient\RequestOptions;
 use GuzzleHttp\Psr7\UriResolver;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Psr7\Utils;
@@ -19,19 +20,19 @@ final class RedirectMiddleware implements MiddlewareInterface
     /**
      * 跟随允许的重定向，所有跳转共享同一次请求的截止时间。
      * @param RequestInterface $request 初始请求
-     * @param array $options 请求选项
-     * @param callable(RequestInterface, array): ResponseInterface $next 单次下游处理器
+     * @param RequestOptions $options 请求选项
+     * @param callable(RequestInterface, RequestOptions): ResponseInterface $next 单次下游处理器
      */
-    public function process(RequestInterface $request, array $options, callable $next): ResponseInterface
+    public function process(RequestInterface $request, RequestOptions $options, callable $next): ResponseInterface
     {
         for ($hop = 0; ; ++$hop) {
             $response = $next($request, $options);
             $status = $response->getStatusCode();
-            if ($options['allow_redirects'] === 0 || !in_array($status, [301, 302, 303, 307, 308], true)
+            if ($options->getRedirectLimit() === 0 || !in_array($status, [301, 302, 303, 307, 308], true)
                 || !$response->hasHeader('Location')) {
                 return $response;
             }
-            if ($hop >= $options['allow_redirects']) {
+            if ($hop >= $options->getRedirectLimit()) {
                 throw new RequestException('HTTP 重定向次数超过上限', $request, $response);
             }
             $locations = $response->getHeader('Location');

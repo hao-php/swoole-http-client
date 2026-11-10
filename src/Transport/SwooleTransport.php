@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Haoa\SwooleHttpClient\Transport;
 
+use Haoa\SwooleHttpClient\RequestOptions;
 use GuzzleHttp\Psr7\Response;
 use Haoa\SwooleHttpClient\Exception\InvalidRequestException;
 use Haoa\SwooleHttpClient\Exception\NetworkException;
@@ -19,9 +20,10 @@ final class SwooleTransport implements TransportInterface
     /**
      * 将 PSR-7 请求转换为 Swoole 请求并接收响应。
      * @param RequestInterface $request 标准 HTTP 请求
-     * @param array $options 超时、证书校验及内部截止时间
+     * @param RequestOptions $options 超时、证书校验及内部截止时间
+     * @param float|null $deadline 内部单调时钟截止时间，直接使用传输器时可省略
      */
-    public function send(RequestInterface $request, array $options): ResponseInterface
+    public function send(RequestInterface $request, RequestOptions $options, ?float $deadline = null): ResponseInterface
     {
         if (Coroutine::getCid() < 0) {
             throw new RequestException('HTTP 请求必须在 Swoole 协程内执行', $request);
@@ -53,7 +55,7 @@ final class SwooleTransport implements TransportInterface
         } catch (\Throwable $exception) {
             throw new InvalidRequestException('请求正文不可读', $request, null, 0, $exception);
         }
-        $deadline = $options['_deadline'] ?? hrtime(true) / 1e9 + $options['timeout'];
+        $deadline ??= hrtime(true) / 1e9 + $options->getTimeout();
         $remaining = $deadline - hrtime(true) / 1e9;
         if ($remaining <= 0) {
             throw new NetworkException('HTTP 请求超时', $request, 0, -2);
@@ -64,7 +66,7 @@ final class SwooleTransport implements TransportInterface
         try {
             $settings = [
                 'timeout' => $remaining,
-                'connect_timeout' => min($options['connect_timeout'], $remaining),
+                'connect_timeout' => min($options->getConnectTimeout(), $remaining),
                 'keep_alive' => false,
                 // 保留原始压缩正文，避免响应头与解压后的正文不一致。
                 'http_compression' => false,
@@ -72,12 +74,12 @@ final class SwooleTransport implements TransportInterface
             ];
             if ($ssl) {
                 $settings += [
-                    'ssl_verify_peer' => $options['verify'] !== false,
-                    'ssl_allow_self_signed' => $options['verify'] === false,
+                    'ssl_verify_peer' => $options->verify !== false,
+                    'ssl_allow_self_signed' => $options->verify === false,
                     'ssl_host_name' => $host,
                 ];
-                if (is_string($options['verify'])) {
-                    $settings['ssl_cafile'] = $options['verify'];
+                if (is_string($options->verify)) {
+                    $settings['ssl_cafile'] = $options->verify;
                 }
             }
             $headers = [];
