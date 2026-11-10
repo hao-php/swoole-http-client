@@ -1,12 +1,14 @@
 {
   "name": "haoa/swoole-http-client",
-  "description": "基于 Swoole 协程客户端的轻量 HTTP 库",
+  "description": "基于 PSR-7 消息和 Swoole 协程传输的 HTTP 客户端",
   "type": "library",
   "license": "Apache-2.0",
   "require": {
     "php": ">=8.1",
     "ext-swoole": ">=5.0",
-    "ext-json": "*"
+    "ext-json": "*",
+    "guzzlehttp/psr7": "^2.7",
+    "psr/http-client": "^1.0"
   },
   "autoload": {
     "psr-4": {"Haoa\\SwooleHttpClient\\": "src/"}
